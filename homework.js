@@ -205,6 +205,13 @@ async function getProductsWithAxios() {
 async function addToCartWithAxios(productId, quantity) {
   // 請實作此函式
   // 提示：axios.post(url, data) 會自動設定 Content-Type
+  const res = await axios.post(`${BASE_URL}/api/livejs/v1/customer/${API_PATH}/carts`,{
+    data:{
+      productId: productId,
+      quantity: quantity
+    }
+  })
+  return res.data
 }
 
 /**
@@ -214,16 +221,24 @@ async function addToCartWithAxios(productId, quantity) {
 async function getOrdersWithAxios() {
   // 請實作此函式
   // 提示：axios.get(url, { headers: { authorization: token } })
+  
+  try {
+    const res = await axios.get(`${BASE_URL}/api/livejs/v1/admin/${API_PATH}/orders`,{
+      headers: { authorization: ADMIN_TOKEN } 
+    });
+    return res.data.orders;
+  } catch (error) {
+    return error.res.data.message;
+  }
 }
 
 /*
 比較題：請說明 fetch 和 axios 的主要差異
 
-1. ____________________________________
+1. ___fetch預設是get，但axios沒有預設，所以任何的都要寫出來
+2. ___fetch需要有xxx.json()來解析json格式資料，而axios預設就會自動解析Json了
 
-2. ____________________________________
-
-3. ____________________________________
+3. ___fetch在做資料發送時要手動設定headers，而axios沒有
 */
 
 // ========================================
@@ -244,6 +259,10 @@ const OrderService = {
    */
   async fetchOrders() {
     // 請實作此函式
+    const res = await axios.get(`${BASE_URL}/api/livejs/v1/admin/${API_PATH}/orders`,{
+      headers: { authorization: ADMIN_TOKEN } 
+    });
+    return res.data.orders;
   },
 
   /**
@@ -253,6 +272,9 @@ const OrderService = {
    */
   formatOrders(orders) {
     // 請實作此函式
+    return orders.map( order=>({
+      ...order,formattedDate: dayjs.unix(order.createdAt).format('YYYY/MM/DD')
+    }));
   },
 
   /**
@@ -262,6 +284,7 @@ const OrderService = {
    */
   filterUnpaidOrders(orders) {
     // 請實作此函式
+    return orders.filter(order => order.paid === false)
   },
 
   /**
