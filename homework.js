@@ -25,6 +25,7 @@ const ADMIN_TOKEN = process.env.API_KEY;
 function formatOrderDate(timestamp) {
   // 請實作此函式
   // 提示：dayjs.unix(timestamp).format('YYYY/MM/DD HH:mm')
+  return dayjs.unix(timestamp).format('YYYY/MM/DD HH:mm')
 }
 
 /**
@@ -38,6 +39,18 @@ function getDaysAgo(timestamp) {
   // 1. 用 dayjs() 取得今天
   // 2. 用 dayjs.unix(timestamp) 取得訂單日期
   // 3. 用 .diff() 計算天數差異
+
+  const now = dayjs();
+
+  const date = dayjs.unix(timestamp);
+
+  const diffDays = now.diff(date,'day');
+
+  if (diffDays === 0){
+    return "今天";
+  }else{
+    return `${diffDays} 天前`;
+  }
 }
 
 /**
@@ -47,6 +60,11 @@ function getDaysAgo(timestamp) {
  */
 function isOrderOverdue(timestamp) {
   // 請實作此函式
+  const now = dayjs();
+
+  const date = dayjs.unix(timestamp);
+
+  return now.diff(date,'day') > 7;
 }
 
 /**
@@ -60,6 +78,17 @@ function getThisWeekOrders(orders) {
   // 1. 用 dayjs().startOf('week') 取得本週開始
   // 2. 用 dayjs().endOf('week') 取得本週結束
   // 3. 用 .isBefore() 和 .isAfter() 判斷
+
+  const startWeek = dayjs().startOf('week');
+  const endWeek = dayjs().endOf('week');
+
+  //篩選
+  return orders.filter(order => {
+    //取得訂單日期
+    const orderDate = dayjs.unix(order.createdAt)
+    //判斷日期區間
+    return orderDate.isBefore(endWeek) && orderDate.isAfter(startWeek);
+  })
 }
 
 // ========================================
@@ -80,6 +109,27 @@ function getThisWeekOrders(orders) {
  */
 function validateOrderUser(data) {
   // 請實作此函式
+  const errors = [];
+  const payment = ['ATM', 'Credit Card', 'Apple Pay'];
+
+  if (!data.name || data.name.trim() === ''){
+    errors.push('姓名 不可為空')
+  }
+  if (!data.tel || !/^09\d{8}$/.test(data.tel)){
+    errors.push('電話 必須是 09 開頭的 10 位數字')
+  }
+  if (!data.email || !data.email.includes('@')){
+    errors.push('信箱 必須包含 @ 符號')
+  }
+  if (!data.address || data.address.trim().length === 0 ){
+    errors.push('地址 不可為空')
+  }
+  if (!data.payment || !payment.includes(data.payment)){
+    errors.push(`付款方式 必須是 'ATM', 'Credit Card', 'Apple Pay' 其中之一`)
+  }
+
+  // 判斷errors陣列中的數量，如果數量為0，就顯示true
+  return { isValid: errors.length === 0, errors }
 }
 
 /**
@@ -94,6 +144,13 @@ function validateOrderUser(data) {
  */
 function validateCartQuantity(quantity) {
   // 請實作此函式
+  if (Number.isInteger(quantity) && quantity > 1 && quantity < 99){
+    return { isValid: true }
+  }else{
+    return { isValid: false, error: '數量必須介於1~99' }
+  }
+
+
 }
 
 // ========================================
@@ -107,6 +164,9 @@ function validateCartQuantity(quantity) {
 function generateOrderId() {
   // 請實作此函式
   // 提示：可以用 Date.now().toString(36) + Math.random().toString(36).slice(2)
+
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  return `ORD-${id}`;
 }
 
 /**
@@ -115,6 +175,8 @@ function generateOrderId() {
  */
 function generateCartItemId() {
   // 請實作此函式
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  return `CART-${id}`;
 }
 
 // ========================================
@@ -129,6 +191,9 @@ async function getProductsWithAxios() {
   // 請實作此函式
   // 提示：axios.get() 會自動解析 JSON，不需要 .json()
   // 回傳 response.data.products
+  const res = await axios.get(`${BASE_URL}/api/livejs/v1/customer/${API_PATH}/products`)
+  return res.data.products;
+
 }
 
 /**
